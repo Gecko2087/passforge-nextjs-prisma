@@ -11,6 +11,7 @@ import { generatePassword, PasswordConfig } from "@/lib/password"
 import { useForm } from "react-hook-form"
 import { Checkbox } from "@/components/ui/checkbox"
 import FormSavePassword from "./form-save-password"
+import { Logo } from "@/components/logo"
 
 const options = [
     {
@@ -75,8 +76,10 @@ const FormCreatePassword = () => {
     return (
         <div className="max-w-2xl mx-auto p-6 space-y-6">
             <header className="text-center space-y-2">
-                <h1 className="text-3xl font-bold text-gray-700">Generador de contraseñas</h1>
-                <p className="text-gray-600">Crea contraseñas seguras y personalizadas</p>
+                <div className="flex justify-center mb-2">
+                    <Logo className="h-12 w-auto" />
+                </div>
+                <p className="text-gray-600">Generador de contraseñas seguras y personalizadas</p>
             </header>
 
             <Card className="bg-gradient-to-r from-gray-900 to-gray-800">
@@ -159,20 +162,21 @@ const FormCreatePassword = () => {
                                         ))}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-                                <Button
-                                    type="submit"
-                                >
-                                    <ShieldCheck />
-                                    Generar nueva contraseña
-                                </Button>
-                                <FormSavePassword
-                                    password={password}
-                                    passwordConfig={form.watch()}
-                                />
-                            </div>
+                            <Button
+                                type="submit"
+                                className="w-full"
+                            >
+                                <ShieldCheck />
+                                Generar nueva contraseña
+                            </Button>
                         </form>
                     </Form>
+                    <div className="mt-3">
+                        <FormSavePassword
+                            password={password}
+                            passwordConfig={form.watch()}
+                        />
+                    </div>
                 </CardContent>
             </Card>
         </div>
