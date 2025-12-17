@@ -1,169 +1,150 @@
-# PassForge
+# PassForge - Generador de Contraseñas
 
-Generador de contraseñas seguras y personalizadas construido con Next.js 15, Prisma ORM y TanStack Query.
+Una aplicación web moderna para generar, guardar y gestionar contraseñas de forma segura. Desarrollada como trabajo final para el curso de Next.js 15 y Prisma ORM.
 
-![Dashboard Principal](./public/screenshots/dashboard-generator.png)
+## ¿Qué hace esta aplicación?
 
-## Descripción
+PassForge está diseñada para resolver el problema de gestionar múltiples contraseñas. Con esta herramienta puedes:
 
-PassForge es una aplicación web full-stack que permite generar contraseñas seguras con configuraciones personalizables y almacenarlas de forma encriptada. La aplicación ofrece una interfaz intuitiva para crear, guardar y gestionar contraseñas con diferentes niveles de complejidad.
-
-## Características
-
-- Generación de contraseñas con configuración personalizable (longitud, mayúsculas, minúsculas, números, símbolos)
-- Almacenamiento seguro de contraseñas con encriptación AES-256-GCM
-- Interfaz moderna y responsiva con modo oscuro
-- Gestión completa de contraseñas guardadas (crear, copiar, eliminar)
-- Tooltips informativos para mejorar la experiencia de usuario
-- Logo y favicon personalizados
+- **Generar contraseñas robustas:** Personaliza la longitud y los caracteres (mayúsculas, números, símbolos) para crear claves imposibles de adivinar.
+- **Guardar de forma segura:** Tus contraseñas se almacenan encriptadas en la base de datos, por lo que solo tú puedes verlas.
+- **Organizar tu vida digital:** Clasifica tus cuentas en categorías como "Trabajo", "Redes Sociales" o "Entretenimiento".
+- **Acceso universal:** Al ser una web app, puedes entrar desde tu computadora o celular.
 
 ## Capturas de Pantalla
 
-### Generador de Contraseñas
-![Generador](./public/screenshots/dashboard-generator.png)
+Aquí puedes ver cómo luce la aplicación:
 
-### Guardar Contraseña
-![Modal de Guardado](./public/screenshots/save-password-modal.png)
+<div align="center">
+  <img src="/public/screenshots/dashboard.png" alt="Dashboard Generador" width="800"/>
+  <p><em>Dashboard principal con generador de contraseñas y opciones de configuración</em></p>
+</div>
 
-### Lista de Contraseñas Guardadas
-![Lista de Contraseñas](./public/screenshots/saved-passwords-list.png)
+<div align="center">
+  <img src="/public/screenshots/categories.png" alt="Categorías" width="800"/>
+  <p><em>Gestión de categorías para organizar tus cuentas</em></p>
+</div>
+
+<div align="center">
+  <img src="/public/screenshots/login.png" alt="Login" width="400"/>
+  <p><em>Pantalla de inicio de sesión segura y moderna</em></p>
+</div>
+
+> *Nota: Las capturas muestran el diseño responsive y el tema oscuro/claro.*
 
 ## Tecnologías Utilizadas
 
-### Frontend
-- **Next.js 15** - Framework de React con App Router
-- **React 19** - Biblioteca de interfaz de usuario
-- **TypeScript** - Tipado estático
-- **Tailwind CSS** - Framework de CSS utility-first
-- **shadcn/ui** - Componentes de UI reutilizables
-- **Radix UI** - Primitivas de UI accesibles
-- **Lucide React** - Iconos
-- **Sonner** - Notificaciones toast
+He utilizado un stack moderno para asegurar rendimiento y escalabilidad:
 
-### Backend
-- **Next.js API Routes** - Endpoints del servidor
-- **Prisma ORM** - ORM para base de datos
-- **SQLite** - Base de datos (desarrollo)
-- **crypto** - Encriptación nativa de Node.js
+- **Frontend**: Next.js 15 (App Router), React 19, TypeScript.
+- **Estilos**: Tailwind CSS v4 para el diseño y shadcn/ui para componentes accesibles.
+- **Backend**: Next.js API Routes para la lógica del servidor.
+- **Base de Datos**: PostgreSQL alojada en Supabase, gestionada con Prisma ORM.
+- **Autenticación**: Better Auth para un manejo seguro de sesiones.
+- **Iconos**: Lucide React.
 
-### Gestión de Estado
-- **TanStack Query (React Query)** - Manejo de estado del servidor
-- **React Hook Form** - Gestión de formularios
-- **Zod** - Validación de esquemas
+## Estructura de la Base de Datos
 
-## Requisitos Previos
+El proyecto utiliza 6 modelos principales definidos en Prisma:
 
-- Node.js 18.x o superior
-- npm o yarn
+| Modelo | Descripción |
+|--------|-------------|
+| `User` | Almacena la información de los usuarios registrados. |
+| `Session` | Gestiona las sesiones activas de los usuarios. |
+| `Account` | Vincula cuentas de proveedores externos (si se implementaran en el futuro). |
+| `Verification` | Maneja tokens para verificar emails o recuperar contraseñas. |
+| `Category` | Permite a los usuarios crear etiquetas para organizar sus claves. |
+| `Password` | Guarda las contraseñas encriptadas y vinculadas a un usuario y categoría. |
 
-## Instalación
+**Relaciones clave**:
+- Un **Usuario** puede tener muchas **Contraseñas** y **Categorías**.
+- Una **Categoría** puede agrupar muchas **Contraseñas**.
 
-1. Clona el repositorio:
-```bash
-git clone <url-del-repositorio>
-cd password-generator
-```
+## Documentación de la API
 
-2. Instala las dependencias:
-```bash
-npm install
-```
+La aplicación expone varios endpoints RESTful protegidos:
 
-3. Configura las variables de entorno:
-Crea un archivo `.env` en la raíz del proyecto con el siguiente contenido:
-```env
-DATABASE_URL="file:./dev.db"
-ENCRYPTION_KEY="tu-clave-de-encriptacion-de-32-caracteres-aqui"
-```
+### Autenticación (`/api/auth/*`)
+Manejado por Better Auth. Incluye registro, inicio de sesión, cierre de sesión y gestión de sesiones.
 
-**Importante:** La `ENCRYPTION_KEY` debe ser una cadena de exactamente 32 caracteres para AES-256. Puedes generar una usando:
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex').slice(0, 32))"
-```
+### Categorías (`/api/categories`)
+- `GET /api/categories`: Obtiene todas las categorías del usuario actual.
+- `POST /api/categories`: Crea una nueva categoría.
+  - **Body**: `{ name: string, color: string, description?: string }`
+- `GET /api/categories/[id]`: Obtiene una categoría específica.
+- `PUT /api/categories/[id]`: Actualiza una categoría.
+- `DELETE /api/categories/[id]`: Elimina una categoría.
 
-4. Configura Prisma:
-```bash
-npx prisma generate
-npx prisma db push
-```
+### Contraseñas (`/api/passwords`)
+- `GET /api/passwords`: Lista todas las contraseñas del usuario. Soporta filtrado por categoría `?categoryId=...`.
+- `POST /api/passwords`: Guarda una nueva contraseña encriptada.
+  - **Body**: `{ title: string, password: string, categoryId?: string, ...config }`
+- `GET /api/passwords/[id]`: Obtiene una contraseña desencriptada (solo el dueño).
+- `PUT /api/passwords/[id]`: Actualiza una contraseña existente.
+- `DELETE /api/passwords/[id]`: Elimina una contraseña.
 
-5. Inicia el servidor de desarrollo:
-```bash
-npm run dev
-```
+## Instalación y Configuración Local
 
-6. Abre tu navegador en [http://localhost:3000](http://localhost:3000)
+Si quieres correr este proyecto en tu máquina, sigue estos pasos:
 
-## Scripts Disponibles
+1.  **Clonar el repositorio:**
+    ```bash
+    git clone https://github.com/tu-usuario/password-generator.git
+    cd password-generator
+    ```
 
-- `npm run dev` - Inicia el servidor de desarrollo
-- `npm run build` - Construye la aplicación para producción
-- `npm start` - Inicia el servidor de producción
-- `npm run lint` - Ejecuta el linter
-- `npx prisma studio` - Abre Prisma Studio para gestionar la base de datos
+2.  **Instalar dependencias:**
+    ```bash
+    npm install
+    ```
 
-## Estructura del Proyecto
+3.  **Configurar variables de entorno:**
+    Crea un archivo `.env` en la raíz y completa con tus datos (puedes usar `.env.example` como guía):
+    ```env
+    DATABASE_URL="postgresql://..."
+    DIRECT_URL="postgresql://..."
+    ENCRYPTION_KEY="tu-clave-secreta-de-32-caracteres"
+    BETTER_AUTH_SECRET="otro-secreto-largo"
+    BETTER_AUTH_URL="http://localhost:3000"
+    ```
 
-```
-password-generator/
-├── app/
-│   ├── (dashboard)/
-│   │   ├── _actions/          # Server Actions
-│   │   ├── _components/       # Componentes del dashboard
-│   │   └── page.tsx           # Página principal
-│   ├── layout.tsx             # Layout raíz
-│   ├── globals.css            # Estilos globales
-│   └── icon.svg               # Favicon
-├── components/
-│   ├── ui/                    # Componentes de shadcn/ui
-│   └── logo.tsx               # Componente del logo
-├── lib/
-│   ├── password.ts            # Lógica de generación de contraseñas
-│   ├── encryption.ts          # Funciones de encriptación
-│   └── utils.ts               # Utilidades
-├── prisma/
-│   └── schema.prisma          # Esquema de la base de datos
-└── public/
-    └── screenshots/           # Capturas de pantalla
-```
+4.  **Preparar la base de datos:**
+    ```bash
+    npx prisma db push
+    npx prisma generate
+    ```
 
-## Uso
+5.  **Cargar datos de prueba (Opcional):**
+    ```bash
+    npm run seed
+    ```
+    Esto creará un usuario demo (`demo@passforge.com` / `Demo123!`) con categorías listas para usar.
 
-### Generar una Contraseña
+6.  **Iniciar el servidor de desarrollo:**
+    ```bash
+    npm run dev
+    ```
+    Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
-1. Ajusta la longitud de la contraseña usando el campo numérico
-2. Selecciona los tipos de caracteres que deseas incluir (mayúsculas, minúsculas, números, símbolos)
-3. Haz clic en "Generar nueva contraseña"
-4. Copia la contraseña generada usando el botón de copiar
+## Protección y Seguridad
 
-### Guardar una Contraseña
+- **Rutas Frontend**: Un Middleware protege las rutas privadas, redirigiendo al login si no hay sesión activa.
+- **API Backend**: Cada endpoint verifica el token de sesión antes de procesar cualquier solicitud, asegurando que los usuarios solo accedan a sus propios datos.
+- **Encriptación**: Las contraseñas se encriptan usando AES-256-GCM antes de guardarse en la base de datos.
 
-1. Después de generar una contraseña, haz clic en "Guardar contraseña"
-2. Ingresa un título descriptivo (ej: "Facebook", "Gmail")
-3. Opcionalmente, añade un nombre de usuario
-4. Haz clic en "Guardar contraseña"
+## Despliegue
 
-### Gestionar Contraseñas Guardadas
+El proyecto está optimizado para desplegarse en **Netlify** o **Vercel**.
+- **Build Command**: `npm run build`
+- **Output Directory**: `.next`
 
-- **Copiar:** Haz clic en el icono azul de copiar para copiar la contraseña al portapapeles
-- **Eliminar:** Haz clic en el icono rojo de eliminar y confirma la acción
+Recuerda configurar las mismas variables de entorno en tu panel de hosting.
 
-## Seguridad
+## Autor
 
-Las contraseñas se almacenan encriptadas usando el algoritmo AES-256-GCM. Cada contraseña tiene:
-- Un vector de inicialización (IV) único
-- Una etiqueta de autenticación para verificar la integridad
-- Encriptación con una clave de 256 bits
-
-**Nota:** Para uso en producción, considera usar una base de datos más robusta (PostgreSQL, MySQL) y almacenar la clave de encriptación en un servicio de gestión de secretos.
-
-## Recursos
-
-- [Documentación de Next.js](https://nextjs.org/docs)
-- [Documentación de Prisma](https://www.prisma.io/docs/guides/nextjs)
-- [Documentación de TanStack Query](https://tanstack.com/query)
-- [Documentación de shadcn/ui](https://ui.shadcn.com)
+**Lucas**
+Trabajo Práctico Final - Curso Next.js + Prisma ORM
 
 ## Licencia
 
-Este proyecto es de código abierto y está disponible bajo la licencia MIT.
+Este proyecto está bajo la licencia MIT. Siéntete libre de usarlo y aprender de él.
