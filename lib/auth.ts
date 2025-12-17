@@ -31,6 +31,9 @@ export const auth = betterAuth({
             maxAge: 60 * 5, // 5 minutos
         },
     },
+    advanced: {
+        cookiePrefix: "passforge",
+    },
     user: {
         additionalFields: {
             role: {
