@@ -49,7 +49,7 @@ interface Password {
 }
 
 async function fetchCategory(id: string): Promise<Category> {
-    const res = await fetch(`/api/categories/${id}`);
+    const res = await fetch(`/api/categories/${id}`, { cache: "no-store" });
     if (!res.ok) {
         if (res.status === 401) throw new Error("Sesión expirada");
         if (res.status === 404) throw new Error("Categoría no encontrada");
@@ -59,7 +59,7 @@ async function fetchCategory(id: string): Promise<Category> {
 }
 
 async function fetchPasswordsByCategory(categoryId: string): Promise<Password[]> {
-    const res = await fetch(`/api/passwords?categoryId=${categoryId}`);
+    const res = await fetch(`/api/passwords?categoryId=${categoryId}`, { cache: "no-store" });
     if (!res.ok) {
         if (res.status === 401) throw new Error("Sesión expirada");
         throw new Error("Error al cargar contraseñas");
