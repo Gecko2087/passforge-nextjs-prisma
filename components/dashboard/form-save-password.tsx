@@ -126,6 +126,7 @@ export default function FormSavePassword({ password, passwordConfig }: Props) {
             setIsOpen(false);
             form.reset();
             queryClient.invalidateQueries({ queryKey: ["passwords"] });
+            queryClient.invalidateQueries({ queryKey: ["categories"] });
         },
         onError(error: Error) {
             toast.error(error.message);
