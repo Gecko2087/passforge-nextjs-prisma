@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
     );
 
     // Obtener token de sesión de cookies
-    const sessionToken = request.cookies.get("better-auth.session_token")?.value;
+    const sessionToken = request.cookies.get("passforge.session_token")?.value;
 
     // Si no hay sesión y no es ruta pública, redirigir a login
     if (!sessionToken && !isPublicRoute) {
