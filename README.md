@@ -38,7 +38,7 @@ Aquí puedes ver cómo luce la aplicación:
 
 He utilizado un stack moderno para asegurar rendimiento y escalabilidad:
 
-- **Frontend**: Next.js 15 (App Router), React 19, TypeScript.
+- **Frontend**: Next.js 16 (App Router), React 19, TypeScript.
 - **Estilos**: Tailwind CSS v4 para el diseño y shadcn/ui para componentes accesibles.
 - **Backend**: Next.js API Routes para la lógica del servidor.
 - **Base de Datos**: PostgreSQL alojada en Supabase, gestionada con Prisma ORM.

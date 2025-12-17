@@ -13,7 +13,6 @@ dist/
 generated/
 
 # Variables de entorno
-.env
 .env.local
 .env.development.local
 .env.test.local
@@ -42,3 +41,6 @@ Thumbs.db
 *.tsbuildinfo
 .vercel
 .netlify
+temp_auto_push.bat
+temp_interactive_push.bat
+branch_structure.json
