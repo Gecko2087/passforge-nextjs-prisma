@@ -10,6 +10,9 @@ const adminRoutes = ["/admin"];
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
+    // Permitir todas las rutas temporalmente para debug
+    // TODO: Restaurar la protección después de verificar que el login funciona
+
     // Permitir rutas de API de auth
     if (pathname.startsWith("/api/auth")) {
         return NextResponse.next();
@@ -20,8 +23,11 @@ export function middleware(request: NextRequest) {
         pathname === route || pathname.startsWith(route + "/")
     );
 
-    // Obtener token de sesión de cookies
-    const sessionToken = request.cookies.get("better-auth.session_token")?.value;
+    // Obtener token de sesión de cookies - probar múltiples nombres posibles
+    const sessionToken =
+        request.cookies.get("better-auth.session_token")?.value ||
+        request.cookies.get("__Secure-better-auth.session_token")?.value ||
+        request.cookies.get("session_token")?.value;
 
     // Si no hay sesión y no es ruta pública, redirigir a login
     if (!sessionToken && !isPublicRoute) {
