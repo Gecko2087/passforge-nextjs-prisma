@@ -6,6 +6,7 @@ import { PrismaClient } from "@/generated/prisma";
 const prisma = new PrismaClient();
 
 export const auth = betterAuth({
+    baseURL: process.env.BETTER_AUTH_URL,
     trustedOrigins: [
         "http://localhost:3000",
         process.env.BETTER_AUTH_URL || "",
