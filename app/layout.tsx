@@ -24,6 +24,7 @@ export default function RootLayout({
         <ThemeProvider>
           <QueryProvider>
             <Navbar />
+            {process.env.PASSFORGE_DEMO === "true" && <p className="border-b px-4 py-3 text-center text-sm">Demo individual · datos guardados durante una hora · usá únicamente contraseñas ficticias.</p>}
             <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
               {children}
             </main>

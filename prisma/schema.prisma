@@ -20,6 +20,7 @@ model User {
   email         String    @unique
   name          String
   emailVerified Boolean   @default(false)
+  isAnonymous   Boolean   @default(false)
   image         String?
   role          String    @default("user")
   banned        Boolean   @default(false)
@@ -32,8 +33,30 @@ model User {
   accounts   Account[]
   passwords  Password[]
   categories Category[]
+  demoUsage  DemoUsage?
 
   @@map("user")
+}
+
+model DemoUsage {
+  userId    String @id
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requests  Int @default(0)
+  expiresAt DateTime
+}
+
+model DemoBudget {
+  id       String @id
+  sessions Int @default(0)
+}
+
+model RateLimit {
+  id          String @id @default(uuid())
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rateLimit")
 }
 
 model Session {

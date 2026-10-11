@@ -14,26 +14,31 @@ export const generatePassword = ({
     length = 8
 }: PasswordConfig = {}) => {
 
-    const uppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const lowercaseChars = "abcdefghijklmnopqrstuvwxyz";
-    const numberChars = "0123456789";
-    const symbolChars = "!@#$%^&*()_+~`|}{[]:;?><,./-=";
-
-    let charPool = "";
-    if (hasUppercase) charPool += uppercaseChars;
-    if (hasLowercase) charPool += lowercaseChars;
-    if (hasNumbers) charPool += numberChars;
-    if (hasSymbols) charPool += symbolChars;
-
-    if (charPool.length === 0) {
-        charPool = lowercaseChars;
+    if (!Number.isInteger(length) || length < 4 || length > 128) {
+        throw new RangeError('La longitud debe estar entre 4 y 128.');
     }
-
-    let password = "";
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * charPool.length);
-        password += charPool.charAt(randomIndex);
+    const groups = [
+        hasLowercase && 'abcdefghijklmnopqrstuvwxyz',
+        hasUppercase && 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        hasNumbers && '0123456789',
+        hasSymbols && '!@#$%^&*()_+~`|}{[]:;?><,./-=',
+    ].filter((group): group is string => Boolean(group));
+    if (!groups.length) {
+        throw new RangeError('Selecciona al menos un grupo de caracteres.');
     }
+    const pool = groups.join('');
+    const chars = groups.map(group => group[randomIndex(group.length)]);
+    while (chars.length < length) chars.push(pool[randomIndex(pool.length)]);
+    for (let i = chars.length - 1; i > 0; i--) {
+        const j = randomIndex(i + 1);
+        [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return chars.join('');
+}
 
-    return password;
+function randomIndex(size: number) {
+    const byte = new Uint8Array(1);
+    const ceiling = 256 - (256 % size);
+    do { globalThis.crypto.getRandomValues(byte); } while (byte[0] >= ceiling);
+    return byte[0] % size;
 }

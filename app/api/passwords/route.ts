@@ -24,7 +24,16 @@ export async function GET(request: NextRequest) {
                 userId: session.user.id,
                 ...(categoryId && { categoryId }),
             },
-            include: {
+            select: {
+                id: true,
+                title: true,
+                length: true,
+                hasUppercase: true,
+                hasLowercase: true,
+                hasNumbers: true,
+                hasSymbols: true,
+                createdAt: true,
+                updatedAt: true,
                 category: {
                     select: {
                         id: true,
@@ -38,12 +47,7 @@ export async function GET(request: NextRequest) {
             },
         });
 
-        const decryptedPasswords = passwords.map((pwd) => ({
-            ...pwd,
-            decryptedPassword: cryptr.decrypt(pwd.encryptedPassword),
-        }));
-
-        return NextResponse.json(decryptedPasswords);
+        return NextResponse.json(passwords);
     } catch (error) {
         console.error("Error fetching passwords:", error);
         return NextResponse.json(
