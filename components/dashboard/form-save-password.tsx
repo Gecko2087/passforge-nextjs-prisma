@@ -29,10 +29,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
+import Link from "next/link"
 
 interface Props {
     password: string
     passwordConfig: PasswordConfig
+    disabled?: boolean
 }
 
 interface Category {
@@ -42,7 +44,7 @@ interface Category {
 }
 
 const formSchema = z.object({
-    title: z.string().min(1, "Título requerido"),
+    title: z.string().trim().min(1, "Escribe un título para este registro."),
     password: z.string().min(4),
     categoryId: z.string().optional(),
 });
@@ -65,8 +67,8 @@ async function createPassword(data: {
         body: JSON.stringify(data),
     });
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Error al guardar");
+        const error = await res.json().catch(() => null);
+        throw new Error(error?.error || "No se pudo guardar el registro.");
     }
     return res.json();
 }
@@ -74,17 +76,17 @@ async function createPassword(data: {
 async function fetchCategories(): Promise<Category[]> {
     const res = await fetch("/api/categories");
     if (!res.ok) {
-        if (res.status === 401) return [];
-        throw new Error("Error al cargar categorías");
+        if (res.status === 401) throw new Error("Sesión expirada. Vuelve a entrar para continuar.");
+        throw new Error("No pudimos cargar las categorías.");
     }
     return res.json();
 }
 
-export default function FormSavePassword({ password, passwordConfig }: Props) {
+export default function FormSavePassword({ password, passwordConfig, disabled = false }: Props) {
     const [isOpen, setIsOpen] = useState(false);
     const queryClient = useQueryClient();
 
-    const { data: categories = [] } = useQuery({
+    const { data: categories = [], isPending: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useQuery({
         queryKey: ["categories"],
         queryFn: fetchCategories,
     });
@@ -136,7 +138,7 @@ export default function FormSavePassword({ password, passwordConfig }: Props) {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" className="w-full gap-2 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300">
+                <Button type="button" variant="outline" disabled={disabled} className="w-full gap-2 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300">
                     <SaveIcon className="h-4 w-4" />
                     Guardar contraseña
                 </Button>
@@ -148,7 +150,7 @@ export default function FormSavePassword({ password, passwordConfig }: Props) {
                         Guardar contraseña
                     </DialogTitle>
                     <DialogDescription>
-                        Guarda tu contraseña de forma segura y encriptada.
+                        Añade la clave generada con un título y una categoría opcional.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -189,25 +191,33 @@ export default function FormSavePassword({ password, passwordConfig }: Props) {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {categories.length === 0 ? (
-                                                <SelectItem value="none" disabled>
-                                                    No hay categorías creadas
+                                            {categories.map((category) => (
+                                                <SelectItem key={category.id} value={category.id}>
+                                                    <span className="flex items-center gap-2">
+                                                        <span
+                                                            className="h-3 w-3 rounded-full"
+                                                            style={{ backgroundColor: category.color }}
+                                                        />
+                                                        {category.name}
+                                                    </span>
                                                 </SelectItem>
-                                            ) : (
-                                                categories.map((category) => (
-                                                    <SelectItem key={category.id} value={category.id}>
-                                                        <span className="flex items-center gap-2">
-                                                            <span
-                                                                className="h-3 w-3 rounded-full"
-                                                                style={{ backgroundColor: category.color }}
-                                                            />
-                                                            {category.name}
-                                                        </span>
-                                                    </SelectItem>
-                                                ))
-                                            )}
+                                            ))}
                                         </SelectContent>
                                     </Select>
+                                    {categoriesLoading && <p role="status" className="text-sm text-muted-foreground">Cargando categorías…</p>}
+                                    {categoriesError && (
+                                        <div role="alert" className="space-y-2 text-sm text-destructive">
+                                            <p>No pudimos cargar las categorías.</p>
+                                            <Button type="button" variant="link" className="h-auto p-0" onClick={() => refetchCategories()}>
+                                                Reintentar
+                                            </Button>
+                                        </div>
+                                    )}
+                                    {!categoriesLoading && !categoriesError && categories.length === 0 && (
+                                        <p className="text-sm text-muted-foreground">
+                                            Puedes guardar sin categoría o <Link href="/categories" className="underline underline-offset-4">crear una categoría</Link>.
+                                        </p>
+                                    )}
                                 </FormItem>
                             )}
                         />
@@ -220,8 +230,10 @@ export default function FormSavePassword({ password, passwordConfig }: Props) {
                                     <FormLabel>Contraseña</FormLabel>
                                     <FormControl>
                                         <Input
-                                            disabled
+                                            type="password"
+                                            readOnly
                                             {...field}
+                                            aria-label="Contraseña que se guardará"
                                             className="font-mono bg-muted text-emerald-600 dark:text-emerald-400"
                                         />
                                     </FormControl>
@@ -249,7 +261,7 @@ export default function FormSavePassword({ password, passwordConfig }: Props) {
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
                             >
                                 {isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                Guardar
+                                {isPending ? "Guardando…" : "Guardar registro"}
                             </Button>
                         </DialogFooter>
                     </form>

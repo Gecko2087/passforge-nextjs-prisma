@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { CaseLower, CaseUpper, CopyIcon, ArrowUp01, Hash, ShieldCheck, Sparkles, KeyRound } from "lucide-react"
+import { CaseLower, CaseUpper, CopyIcon, ArrowUp01, Hash, ShieldCheck, Sparkles, KeyRound, Eye, EyeOff } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { generatePassword, PasswordConfig } from "@/lib/password"
@@ -41,6 +41,9 @@ const options = [
 
 const FormCreatePassword = () => {
     const [password, setPassword] = useState("");
+    const [passwordVisible, setPasswordVisible] = useState(false);
+    const [generationError, setGenerationError] = useState("");
+    const [copying, setCopying] = useState(false);
 
     const form = useForm<PasswordConfig>({
         defaultValues: {
@@ -53,27 +56,45 @@ const FormCreatePassword = () => {
     })
 
     useEffect(() => {
-        const generated = generatePassword({
-            hasLowercase: true,
-            hasUppercase: true,
-            hasNumbers: true,
-            hasSymbols: true,
-            length: 16
-        })
-
-        setPassword(generated)
+        try {
+            setPassword(generatePassword({
+                hasLowercase: true,
+                hasUppercase: true,
+                hasNumbers: true,
+                hasSymbols: true,
+                length: 16
+            }));
+        } catch {
+            setGenerationError("Este navegador no pudo generar una contraseña. Comprueba que el contexto sea seguro y vuelve a intentarlo.");
+        }
     }, [])
 
-    const handleCopyPassword = () => {
-        navigator.clipboard.writeText(password).then(() => {
+    const handleCopyPassword = async () => {
+        if (!password || copying) return;
+        setCopying(true);
+        try {
+            if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+            await navigator.clipboard.writeText(password);
             toast.success("Contraseña copiada al portapapeles");
-        });
+        } catch {
+            toast.error("No se pudo copiar. Comprueba los permisos del navegador e inténtalo otra vez.");
+        } finally {
+            setCopying(false);
+        }
     };
 
     const handleGenerate = () => {
-        const values = form.getValues()
-        const newPassword = generatePassword(values)
-        setPassword(newPassword)
+        try {
+            const values = form.getValues();
+            const newPassword = generatePassword(values);
+            setPassword(newPassword);
+            setPasswordVisible(false);
+            setGenerationError("");
+        } catch (error) {
+            setPassword("");
+            setGenerationError(error instanceof Error ? error.message : "No se pudo generar la contraseña.");
+            toast.error("Revisa la longitud y los grupos de caracteres seleccionados.");
+        }
     }
 
     return (
@@ -102,22 +123,39 @@ const FormCreatePassword = () => {
                     <CardContent className="bg-linear-to-br from-slate-900/95 to-purple-900/95 backdrop-blur rounded-lg p-6">
                         <div className="flex items-center gap-2 mb-3">
                             <Sparkles className="h-4 w-4 text-amber-400" />
-                            <span className="text-sm font-medium text-slate-300">Tu contraseña segura</span>
+                            <span className="text-sm font-medium text-slate-300">Contraseña generada</span>
                         </div>
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex-1 min-w-0 bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                                <p className="text-xl md:text-2xl font-mono break-all bg-linear-to-r from-emerald-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent leading-relaxed tracking-wide">
-                                    {password}
+                                <p className="text-xl md:text-2xl font-mono break-all text-emerald-300 leading-relaxed tracking-wide" aria-live="polite">
+                                    {password ? (passwordVisible ? password : "•".repeat(password.length)) : "Genera una contraseña para empezar"}
                                 </p>
                             </div>
                             <Button
+                                type="button"
+                                onClick={() => setPasswordVisible(value => !value)}
+                                disabled={!password}
+                                aria-label={passwordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+                                title={passwordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+                                variant="outline"
+                                size="icon"
+                                className="shrink-0 h-14 w-14"
+                            >
+                                {passwordVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </Button>
+                            <Button
+                                type="button"
                                 onClick={handleCopyPassword}
+                                disabled={!password || copying}
+                                aria-label="Copiar contraseña generada"
+                                title="Copiar contraseña"
                                 className="shrink-0 bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white h-14 w-14 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg shadow-indigo-500/25"
                                 size="icon"
                             >
                                 <CopyIcon className="h-5 w-5" />
                             </Button>
                         </div>
+                        {generationError && <p role="alert" className="mt-3 text-sm text-red-300">{generationError}</p>}
                     </CardContent>
                 </div>
             </Card>
@@ -148,9 +186,12 @@ const FormCreatePassword = () => {
                                                 <Input
                                                     {...field}
                                                     type="number"
+                                                    onChange={(event) => field.onChange(event.target.valueAsNumber)}
                                                     className="text-center text-lg font-bold h-12 max-w-24 border-2 focus:border-violet-500"
                                                     min={4}
                                                     max={128}
+                                                    step={1}
+                                                    aria-label="Longitud de la contraseña, entre 4 y 128 caracteres"
                                                 />
                                                 <div className="flex-1 flex gap-2">
                                                     {[8, 12, 16, 24, 32].map((len) => (
@@ -226,6 +267,7 @@ const FormCreatePassword = () => {
                         <FormSavePassword
                             password={password}
                             passwordConfig={form.watch()}
+                            disabled={!password}
                         />
                     </div>
                 </CardContent>

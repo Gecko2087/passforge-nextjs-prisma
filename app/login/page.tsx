@@ -10,12 +10,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, LogIn, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
-// Credenciales del usuario demo
-const DEMO_CREDENTIALS = {
-    email: "demo@passforge.com",
-    password: "Demo123!"
-};
-
 // Traducciones de errores comunes
 const translateError = (error: string): string => {
     const translations: Record<string, string> = {
@@ -72,9 +66,13 @@ export default function LoginPage() {
     };
 
     const handleDemoLogin = async () => {
-        setEmail(DEMO_CREDENTIALS.email);
-        setPassword(DEMO_CREDENTIALS.password);
-        await handleLogin(DEMO_CREDENTIALS.email, DEMO_CREDENTIALS.password, true);
+        setDemoLoading(true);
+        try {
+            const result = await signIn.anonymous();
+            if (result.error) toast.error(result.error.message || "No se pudo iniciar la demo");
+            else window.location.href = "/";
+        } catch { toast.error("Error de conexión"); }
+        finally { setDemoLoading(false); }
     };
 
     return (
@@ -156,8 +154,11 @@ export default function LoginPage() {
                             {demoLoading && (
                                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                             )}
-                            Entrar como usuario demo
+                            {demoLoading ? "Preparando tu espacio demo…" : "Entrar como usuario demo"}
                         </Button>
+                        <p className="text-xs text-center text-muted-foreground">
+                            Sin registro: crea una sesión aislada que vence en una hora. Usa solo claves ficticias.
+                        </p>
 
                         <p className="text-sm text-muted-foreground text-center pt-2">
                             ¿No tienes cuenta?{" "}

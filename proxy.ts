@@ -4,14 +4,14 @@ import type { NextRequest } from "next/server";
 // Rutas públicas que no requieren autenticación
 const publicRoutes = ["/login", "/registro", "/api/auth"];
 
-// Rutas que requieren rol de admin
-const adminRoutes = ["/admin"];
-
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // Permitir todas las rutas temporalmente para debug
-    // TODO: Restaurar la protección después de verificar que el login funciona
+    // Navigation hint only: every API handler independently verifies the real session.
+    // Keep login reachable when a stale or forged cookie exists.
+    if (pathname.startsWith('/api/') || pathname === '/login' || pathname === '/registro') {
+        return NextResponse.next();
+    }
 
     // Permitir rutas de API de auth
     if (pathname.startsWith("/api/auth")) {
@@ -34,11 +34,6 @@ export function middleware(request: NextRequest) {
         const loginUrl = new URL("/login", request.url);
         loginUrl.searchParams.set("redirect", pathname);
         return NextResponse.redirect(loginUrl);
-    }
-
-    // Si hay sesión y está en página de login/registro, redirigir a inicio
-    if (sessionToken && (pathname === "/login" || pathname === "/registro")) {
-        return NextResponse.redirect(new URL("/", request.url));
     }
 
     // Para rutas de admin, la verificación de rol se hace en el componente

@@ -34,9 +34,10 @@ export async function GET(request: Request, { params }: RouteParams) {
             return NextResponse.json({ error: "Contraseña no encontrada" }, { status: 404 });
         }
 
+        const { encryptedPassword, ...metadata } = password;
         return NextResponse.json({
-            ...password,
-            decryptedPassword: cryptr.decrypt(password.encryptedPassword),
+            ...metadata,
+            decryptedPassword: cryptr.decrypt(encryptedPassword),
         });
     } catch (error) {
         console.error("Error fetching password:", error);
@@ -64,15 +65,61 @@ export async function PUT(request: Request, { params }: RouteParams) {
             return NextResponse.json({ error: "Contraseña no encontrada" }, { status: 404 });
         }
 
-        const { title, password, categoryId, ...rest } = body;
-        const updateData: Record<string, unknown> = { ...rest };
-
-        if (title) updateData.title = title;
-        if (password) updateData.encryptedPassword = cryptr.encrypt(password);
-        if (categoryId !== undefined) updateData.categoryId = categoryId;
+        const allowed = new Set(['title', 'password', 'categoryId', 'length',
+            'hasUppercase', 'hasLowercase', 'hasNumbers', 'hasSymbols']);
+        if (!body || typeof body !== 'object' || Array.isArray(body) ||
+            Object.keys(body).some(key => !allowed.has(key))) {
+            return NextResponse.json({ error: 'Campos no permitidos' }, { status: 400 });
+        }
+        const updateData: {
+            title?: string; encryptedPassword?: string; categoryId?: string | null;
+            length?: number; hasUppercase?: boolean; hasLowercase?: boolean;
+            hasNumbers?: boolean; hasSymbols?: boolean;
+        } = {};
+        if ('title' in body) {
+            if (typeof body.title !== 'string' || !body.title) {
+                return NextResponse.json({ error: 'Título inválido' }, { status: 400 });
+            }
+            updateData.title = body.title;
+        }
+        if ('password' in body) {
+            if (typeof body.password !== 'string' || !body.password) {
+                return NextResponse.json({ error: 'Contraseña inválida' }, { status: 400 });
+            }
+            updateData.encryptedPassword = cryptr.encrypt(body.password);
+        }
+        if ('categoryId' in body) {
+            if (body.categoryId !== null &&
+                (typeof body.categoryId !== 'string' || !body.categoryId)) {
+                return NextResponse.json({ error: 'Categoría inválida' }, { status: 400 });
+            }
+            if (body.categoryId !== null) {
+                const category = await prisma.category.findFirst({
+                    where: { id: body.categoryId, userId: session.user.id },
+                });
+                if (!category) {
+                    return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 });
+                }
+            }
+            updateData.categoryId = body.categoryId;
+        }
+        if ('length' in body) {
+            if (!Number.isInteger(body.length) || body.length < 1) {
+                return NextResponse.json({ error: 'Longitud inválida' }, { status: 400 });
+            }
+            updateData.length = body.length;
+        }
+        for (const key of ['hasUppercase', 'hasLowercase', 'hasNumbers', 'hasSymbols'] as const) {
+            if (key in body) {
+                if (typeof body[key] !== 'boolean') {
+                    return NextResponse.json({ error: 'Opciones inválidas' }, { status: 400 });
+                }
+                updateData[key] = body[key];
+            }
+        }
 
         const updated = await prisma.password.update({
-            where: { id },
+            where: { id, userId: session.user.id },
             data: updateData,
             include: {
                 category: { select: { id: true, name: true, color: true } },

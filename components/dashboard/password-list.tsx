@@ -1,9 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CopyIcon, FolderOpen, Loader2, KeyRound } from "lucide-react"
+import Link from "next/link"
+import { CopyIcon, FolderOpen, Loader2, KeyRound, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import PasswordOptionsTags from "./password-options-tags"
 import PasswordDeleteDialog from "./password-delete-dialog"
@@ -17,7 +19,6 @@ interface Password {
     hasLowercase: boolean;
     hasNumbers: boolean;
     hasSymbols: boolean;
-    decryptedPassword: string;
     category?: {
         id: string;
         name: string;
@@ -35,30 +36,56 @@ async function fetchPasswords(): Promise<Password[]> {
 }
 
 export default function PasswordList() {
-    const { data: passwords, error, isPending } = useQuery({
+    const [copyingId, setCopyingId] = useState<string | null>(null);
+    const { data: passwords, error, isPending, refetch } = useQuery({
         queryKey: ["passwords"],
         queryFn: fetchPasswords,
     });
 
-    const handleCopy = (password: string) => {
-        navigator.clipboard.writeText(password).then(() => {
+    const handleCopy = async (id: string) => {
+        if (copyingId) return;
+        setCopyingId(id);
+        try {
+            const res = await fetch(`/api/passwords/${encodeURIComponent(id)}`, { cache: "no-store" });
+            if (!res.ok) {
+                const data = await res.json().catch(() => null);
+                throw new Error(data?.error || "No se pudo cargar esta contraseña");
+            }
+            const data = await res.json();
+            if (typeof data.decryptedPassword !== "string" || !data.decryptedPassword) {
+                throw new Error("La contraseña no está disponible");
+            }
+            if (!navigator.clipboard?.writeText) throw new Error("El portapapeles no está disponible en este navegador");
+            await navigator.clipboard.writeText(data.decryptedPassword);
             toast.success("Contraseña copiada");
-        });
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "No se pudo copiar la contraseña");
+        } finally {
+            setCopyingId(null);
+        }
     };
 
     if (isPending) {
         return (
-            <div className="flex items-center justify-center py-12">
+            <div role="status" aria-label="Cargando contraseñas" className="flex items-center justify-center gap-3 py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Cargando tu bóveda…</span>
             </div>
         );
     }
 
     if (error) {
         return (
-            <p className="text-center text-red-500 py-8">
-                Error: {error.message}
-            </p>
+            <div role="alert" className="mx-auto flex max-w-xl flex-col items-center gap-3 py-8 text-center">
+                <p className="text-red-500">No pudimos cargar la bóveda. {error.message}</p>
+                <Button type="button" variant="outline" onClick={() => refetch()}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Reintentar
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                    Si la sesión venció, <Link href="/login" className="underline underline-offset-4">vuelve a entrar</Link>.
+                </p>
+            </div>
         );
     }
 
@@ -68,9 +95,9 @@ export default function PasswordList() {
                 <Card>
                     <CardContent className="flex flex-col items-center py-12">
                         <KeyRound className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">Sin contraseñas guardadas</h3>
+                        <h3 className="text-lg font-semibold mb-2">Tu bóveda está vacía</h3>
                         <p className="text-muted-foreground text-center">
-                            Genera y guarda tu primera contraseña
+                            Genera una clave de prueba arriba y elige <span className="font-medium">Guardar contraseña</span> para añadirla a la bóveda. En la demo, usa solo claves ficticias.
                         </p>
                     </CardContent>
                 </Card>
@@ -83,7 +110,7 @@ export default function PasswordList() {
             <section className="text-center space-y-1">
                 <h2 className="text-2xl font-bold">Mis contraseñas guardadas</h2>
                 <p className="text-sm text-muted-foreground">
-                    Tus contraseñas están protegidas. Cópialas cuando las necesites.
+                    Los valores no se cargan junto con la lista. Se solicitan al servidor cuando eliges copiarlos.
                 </p>
             </section>
 
@@ -120,9 +147,12 @@ export default function PasswordList() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
-                                                onClick={() => handleCopy(item.decryptedPassword)}
+                                                onClick={() => handleCopy(item.id)}
+                                                disabled={copyingId !== null}
+                                                aria-label={`Copiar contraseña de ${item.title}`}
+                                                title={`Copiar contraseña de ${item.title}`}
                                             >
-                                                <CopyIcon className="h-4 w-4" />
+                                                {copyingId === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CopyIcon className="h-4 w-4" />}
                                             </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>

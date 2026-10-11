@@ -1,10 +1,16 @@
 import { auth } from "./auth";
 import { headers } from "next/headers";
+import { consumeDemoRequest, demoEnabled } from "./demo";
 
 export async function getServerSession() {
+    const requestHeaders = await headers();
+    const origin = requestHeaders.get('origin');
+    const configuredOrigin = process.env.BETTER_AUTH_URL ? new URL(process.env.BETTER_AUTH_URL).origin : null;
+    if (origin && configuredOrigin && origin !== configuredOrigin) return null;
     const session = await auth.api.getSession({
-        headers: await headers(),
+        headers: requestHeaders,
     });
+    if (session && demoEnabled && !await consumeDemoRequest(session.user)) return null;
     return session;
 }
 

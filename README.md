@@ -8,9 +8,9 @@ Una aplicación web moderna para generar, guardar y gestionar contraseñas de fo
 
 PassForge está diseñada para resolver el problema de gestionar múltiples contraseñas. Con esta herramienta puedes:
 
-- **Generar contraseñas robustas:** Personaliza la longitud y los caracteres (mayúsculas, números, símbolos) para crear claves imposibles de adivinar.
-- **Guardar de forma segura:** Tus contraseñas se almacenan encriptadas en la base de datos, por lo que solo tú puedes verlas.
-- **Organizar tu vida digital:** Clasifica tus cuentas en categorías como "Trabajo", "Redes Sociales" o "Entretenimiento".
+- **Generar contraseñas:** Personaliza la longitud y los grupos de caracteres. La aplicación exige al menos un grupo.
+- **Organizar registros:** Guarda una clave generada con un título y una categoría opcional, como "Trabajo" o "Entretenimiento".
+- **Copiar bajo demanda:** La lista carga metadatos; el valor se solicita cuando eliges copiarlo.
 - **Acceso universal:** Al ser una web app, puedes entrar desde tu computadora o celular.
 
 ## Capturas de Pantalla
@@ -116,11 +116,11 @@ Si quieres correr este proyecto en tu máquina, sigue estos pasos:
     npx prisma generate
     ```
 
-5.  **Cargar datos de prueba (Opcional):**
+5.  **Cargar datos de prueba (Opcional, solo local):**
     ```bash
     npm run seed
     ```
-    Esto creará un usuario demo (`demo@passforge.com` / `Demo123!`) con categorías listas para usar.
+    Esto crea una cuenta y categorías de ejemplo. El seed elimina y vuelve a crear esa cuenta al ejecutarse; no lo ejecutes sobre una base de datos compartida o de producción.
 
 6.  **Iniciar el servidor de desarrollo:**
     ```bash
@@ -128,11 +128,12 @@ Si quieres correr este proyecto en tu máquina, sigue estos pasos:
     ```
     Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
-## Protección y Seguridad
+## Uso de la demo y límites
 
-- **Rutas Frontend**: Un Middleware protege las rutas privadas, redirigiendo al login si no hay sesión activa.
-- **API Backend**: Cada endpoint verifica el token de sesión antes de procesar cualquier solicitud, asegurando que los usuarios solo accedan a sus propios datos.
-- **Encriptación**: Las contraseñas se encriptan usando AES-256-GCM antes de guardarse en la base de datos.
+- En `/login`, elige **Entrar como usuario demo** para crear un espacio aislado sin registro. La sesión de demo vence en una hora.
+- Usa contraseñas ficticias en la demo pública. Este proyecto educativo no ha pasado una auditoría de seguridad y no debe usarse para guardar credenciales reales.
+- En la bóveda, el listado muestra títulos, categorías y opciones. El valor de una contraseña se pide al servidor al elegir **Copiar**.
+- Las rutas de la aplicación y de la API requieren una sesión; revisa el código y la configuración antes de desplegar este proyecto.
 
 ## Despliegue
 
