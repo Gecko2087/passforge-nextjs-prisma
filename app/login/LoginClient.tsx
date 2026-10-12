@@ -101,6 +101,7 @@ export default function LoginClient({ demoMode }: { demoMode: boolean }) {
                                 className="w-full bg-linear-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-500 hover:to-indigo-500"
                                 onClick={handleDemoLogin}
                                 disabled={demoLoading}
+                                aria-busy={demoLoading}
                             >
                                 {demoLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <LogIn className="h-4 w-4 mr-2" />}
                                 {demoLoading ? "Preparando tu espacio demo…" : "Entrar como visitante"}
@@ -137,7 +138,7 @@ export default function LoginClient({ demoMode }: { demoMode: boolean }) {
                             <Button
                                 type="submit"
                                 className="w-full bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-500/25"
-                                disabled={loading || demoLoading}
+                                disabled={loading}
                             >
                                 {loading ? (
                                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -146,27 +147,6 @@ export default function LoginClient({ demoMode }: { demoMode: boolean }) {
                                 )}
                                 Iniciar Sesión
                             </Button>
-                            <div className="relative w-full">
-                                <div className="absolute inset-0 flex items-center">
-                                    <span className="w-full border-t border-border" />
-                                </div>
-                                <div className="relative flex justify-center text-xs uppercase">
-                                    <span className="bg-card px-2 text-muted-foreground">o prueba con</span>
-                                </div>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300"
-                                onClick={handleDemoLogin}
-                                disabled={loading || demoLoading}
-                            >
-                                {demoLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                {demoLoading ? "Preparando tu espacio demo…" : "Entrar como usuario demo"}
-                            </Button>
-                            <p className="text-xs text-center text-muted-foreground">
-                                Sin registro: crea una sesión aislada que vence en una hora. Usa solo claves ficticias.
-                            </p>
                             <p className="text-sm text-muted-foreground text-center pt-2">
                                 ¿No tienes cuenta?{" "}
                                 <Link href="/registro" className="text-violet-500 hover:text-violet-400 hover:underline">
