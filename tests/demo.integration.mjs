@@ -13,7 +13,8 @@ new DatabaseSync(database).close();
 const original = await readFile('prisma/schema.prisma', 'utf8');
 const schemaPath = path.join(directory, 'schema.prisma');
 await writeFile(schemaPath, original.replace('provider = "postgresql"', 'provider = "sqlite"')
-  .replace('output   = "../generated/prisma"', 'output   = "' + path.resolve('generated/prisma').replaceAll('\\', '/') + '"'));
+  .replace('provider      = "prisma-client-js"',
+    'provider      = "prisma-client-js"\n  output = "' + path.resolve('node_modules/.prisma/client').replaceAll('\\', '/') + '"'));
 const env = { ...process.env, NODE_ENV: 'production', DATABASE_URL: 'file:' + database.replaceAll('\\', '/'),
   BETTER_AUTH_SECRET: randomBytes(32).toString('hex'), ENCRYPTION_KEY: randomBytes(32).toString('hex'),
   BETTER_AUTH_URL: 'http://localhost:3010', NEXT_PUBLIC_BETTER_AUTH_URL: 'http://localhost:3010',
