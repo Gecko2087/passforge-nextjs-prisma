@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { cryptr } from "@/lib/cripto";
+import { getPrisma } from "@/lib/prisma";
+import { encryptPassword, decryptPassword } from "@/lib/cripto";
 import { getServerSession } from "@/lib/auth-server";
 
 interface RouteParams {
@@ -11,6 +11,7 @@ interface RouteParams {
 export async function GET(request: Request, { params }: RouteParams) {
     try {
         const session = await getServerSession();
+        const prisma = getPrisma();
 
         if (!session) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -37,10 +38,10 @@ export async function GET(request: Request, { params }: RouteParams) {
         const { encryptedPassword, ...metadata } = password;
         return NextResponse.json({
             ...metadata,
-            decryptedPassword: cryptr.decrypt(encryptedPassword),
+            decryptedPassword: await decryptPassword(encryptedPassword, session.user.id, id),
         });
     } catch (error) {
-        console.error("Error fetching password:", error);
+        console.error("password_read_failed");
         return NextResponse.json({ error: "Error al obtener contraseña" }, { status: 500 });
     }
 }
@@ -49,6 +50,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function PUT(request: Request, { params }: RouteParams) {
     try {
         const session = await getServerSession();
+        const prisma = getPrisma();
 
         if (!session) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -86,7 +88,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
             if (typeof body.password !== 'string' || !body.password) {
                 return NextResponse.json({ error: 'Contraseña inválida' }, { status: 400 });
             }
-            updateData.encryptedPassword = cryptr.encrypt(body.password);
+            updateData.encryptedPassword = await encryptPassword(body.password, session.user.id, id);
         }
         if ('categoryId' in body) {
             if (body.categoryId !== null &&
@@ -126,9 +128,10 @@ export async function PUT(request: Request, { params }: RouteParams) {
             },
         });
 
-        return NextResponse.json(updated);
+        const { encryptedPassword: _encrypted, ...metadata } = updated;
+        return NextResponse.json(metadata);
     } catch (error) {
-        console.error("Error updating password:", error);
+        console.error("password_update_failed");
         return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
     }
 }
@@ -137,6 +140,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 export async function DELETE(request: Request, { params }: RouteParams) {
     try {
         const session = await getServerSession();
+        const prisma = getPrisma();
 
         if (!session) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -156,7 +160,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
         return NextResponse.json({ message: "Contraseña eliminada" });
     } catch (error) {
-        console.error("Error deleting password:", error);
+        console.error("password_delete_failed");
         return NextResponse.json({ error: "Error al eliminar" }, { status: 500 });
     }
 }

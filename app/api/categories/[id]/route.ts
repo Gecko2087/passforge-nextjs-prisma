@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { getServerSession } from "@/lib/auth-server";
 
 interface RouteParams {
@@ -10,6 +10,7 @@ interface RouteParams {
 export async function GET(request: Request, { params }: RouteParams) {
     try {
         const session = await getServerSession();
+        const prisma = getPrisma();
         if (!session) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
@@ -31,7 +32,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
         return NextResponse.json(category);
     } catch (error) {
-        console.error("Error:", error);
+        console.error("category_request_failed");
         return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
@@ -40,6 +41,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function PUT(request: Request, { params }: RouteParams) {
     try {
         const session = await getServerSession();
+        const prisma = getPrisma();
         if (!session) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
@@ -68,7 +70,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
         return NextResponse.json(updated);
     } catch (error) {
-        console.error("Error:", error);
+        console.error("category_request_failed");
         return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
@@ -77,6 +79,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 export async function DELETE(request: Request, { params }: RouteParams) {
     try {
         const session = await getServerSession();
+        const prisma = getPrisma();
         if (!session) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
@@ -95,7 +98,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
         return NextResponse.json({ message: "Categoría eliminada" });
     } catch (error) {
-        console.error("Error:", error);
+        console.error("category_request_failed");
         return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }

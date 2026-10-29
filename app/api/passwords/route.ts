@@ -1,12 +1,13 @@
 import { NextResponse, NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
-import { cryptr } from "@/lib/cripto";
+import { getPrisma } from "@/lib/prisma";
+import { encryptPassword } from "@/lib/cripto";
 import { getServerSession } from "@/lib/auth-server";
 
 // GET /api/passwords - Obtener contraseñas del usuario autenticado
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession();
+        const prisma = getPrisma();
 
         if (!session) {
             return NextResponse.json(
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(passwords);
     } catch (error) {
-        console.error("Error fetching passwords:", error);
+        console.error("password_list_failed");
         return NextResponse.json(
             { error: "Error al obtener contraseñas" },
             { status: 500 }
@@ -62,6 +63,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: Request) {
     try {
         const session = await getServerSession();
+        const prisma = getPrisma();
 
         if (!session) {
             return NextResponse.json(
@@ -96,10 +98,12 @@ export async function POST(request: Request) {
             }
         }
 
-        const encryptedPassword = cryptr.encrypt(password);
+        const id = crypto.randomUUID();
+        const encryptedPassword = await encryptPassword(password, session.user.id, id);
 
         const newPassword = await prisma.password.create({
             data: {
+                id,
                 title,
                 encryptedPassword,
                 length: length || password.length,
@@ -121,9 +125,10 @@ export async function POST(request: Request) {
             },
         });
 
-        return NextResponse.json(newPassword, { status: 201 });
+        const { encryptedPassword: _encrypted, ...metadata } = newPassword;
+        return NextResponse.json(metadata, { status: 201 });
     } catch (error) {
-        console.error("Error creating password:", error);
+        console.error("password_create_failed");
         return NextResponse.json(
             { error: "Error al crear contraseña" },
             { status: 500 }

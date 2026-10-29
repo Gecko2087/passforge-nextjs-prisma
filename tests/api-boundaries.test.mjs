@@ -35,8 +35,11 @@ async function load(relative, { authenticated = true, ownsPassword = true, ownsC
   });
   const modules = {
     'next/server': { NextResponse: { json: (body, options) => ({ body, status: options?.status ?? 200 }) } },
-    '@/lib/prisma': { default: prisma },
-    '@/lib/cripto': { cryptr: { encrypt: value => 'encrypted:' + value, decrypt: value => value } },
+    '@/lib/prisma': { getPrisma: () => prisma },
+    '@/lib/cripto': {
+      encryptPassword: async value => 'encrypted:' + value,
+      decryptPassword: async value => value,
+    },
     '@/lib/auth-server': { getServerSession: async () => session },
   };
   const candidate = new vm.SourceTextModule(code, { context,

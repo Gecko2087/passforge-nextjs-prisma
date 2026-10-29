@@ -3,5 +3,5 @@ import LoginClient from "./LoginClient";
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
-    return <LoginClient demoMode={process.env.PASSFORGE_DEMO === "true"} />;
+    return <LoginClient demoMode />;
 }

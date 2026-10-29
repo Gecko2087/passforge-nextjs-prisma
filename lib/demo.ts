@@ -1,19 +1,24 @@
-import prisma from "./prisma";
+import { getRuntimeEnv } from "./runtime";
 
-export const demoEnabled = process.env.PASSFORGE_DEMO === "true";
+// This deployment is exclusively a synthetic-data demo, with no credential accounts.
+export const demoEnabled = true;
 const lifetime = 60 * 60 * 1000;
 
 export async function reserveDemoSlot(now = new Date()) {
-  return prisma.$transaction(async tx => {
-    const id = now.toISOString().slice(0, 10);
-    await tx.demoBudget.upsert({ where: { id }, create: { id }, update: {} });
-    const slot = await tx.demoBudget.updateMany({ where: { id, sessions: { lt: 100 } },
-      data: { sessions: { increment: 1 } } });
-    if (!slot.count) return false;
-    await tx.user.deleteMany({ where: { isAnonymous: true,
-      createdAt: { lt: new Date(now.getTime() - lifetime) } } });
-    return true;
-  });
+  const db = getRuntimeEnv().DB;
+  const id = now.toISOString().slice(0, 10);
+  // Conditional UPSERT reserves a slot atomically, even for concurrent visitors.
+  const reserved = await db.prepare(`INSERT INTO DemoBudget (id, sessions) VALUES (?, 1)
+    ON CONFLICT(id) DO UPDATE SET sessions = sessions + 1 WHERE sessions < 100
+    RETURNING sessions`).bind(id).first();
+  if (!reserved) return false;
+  await db.batch([
+    db.prepare(`DELETE FROM user WHERE isAnonymous = 1 AND createdAt < ?`)
+      .bind(new Date(now.getTime() - lifetime).toISOString()),
+    db.prepare(`DELETE FROM DemoBudget WHERE id < ?`).bind(id),
+    db.prepare(`DELETE FROM rateLimit WHERE lastRequest < ?`).bind(now.getTime() - 86400000),
+  ]);
+  return true;
 }
 
 export async function consumeDemoRequest(user: { id: string; createdAt: Date; isAnonymous?: boolean | null }) {
@@ -21,9 +26,10 @@ export async function consumeDemoRequest(user: { id: string; createdAt: Date; is
   const now = new Date();
   const expiresAt = new Date(new Date(user.createdAt).getTime() + lifetime);
   if (expiresAt <= now) return false;
-  await prisma.demoUsage.upsert({ where: { userId: user.id },
-    create: { userId: user.id, expiresAt }, update: {} });
-  const result = await prisma.demoUsage.updateMany({ where: { userId: user.id,
-    expiresAt: { gt: now }, requests: { lt: 200 } }, data: { requests: { increment: 1 } } });
-  return result.count === 1;
+  const used = await getRuntimeEnv().DB.prepare(`
+    INSERT INTO DemoUsage (userId, requests, expiresAt) VALUES (?, 1, ?)
+    ON CONFLICT(userId) DO UPDATE SET requests = requests + 1
+    WHERE requests < 200 AND expiresAt > ? RETURNING requests`)
+    .bind(user.id, expiresAt.toISOString(), now.toISOString()).first();
+  return !!used;
 }

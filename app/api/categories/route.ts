@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { getServerSession } from "@/lib/auth-server";
 
 // GET /api/categories
 export async function GET() {
     try {
         const session = await getServerSession();
+        const prisma = getPrisma();
 
         if (!session) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -25,7 +26,7 @@ export async function GET() {
 
         return NextResponse.json(categories);
     } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("category_list_failed");
         return NextResponse.json({ error: "Error al obtener categorías" }, { status: 500 });
     }
 }
@@ -34,6 +35,7 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const session = await getServerSession();
+        const prisma = getPrisma();
 
         if (!session) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -57,7 +59,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json(category, { status: 201 });
     } catch (error) {
-        console.error("Error creating category:", error);
+        console.error("category_create_failed");
         return NextResponse.json({ error: "Error al crear categoría" }, { status: 500 });
     }
 }

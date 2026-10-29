@@ -1,13 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client/wasm";
+import { PrismaD1 } from "@prisma/adapter-d1";
+import { getRuntimeEnv } from "./runtime";
 
-const globalForPrisma = global as unknown as {
-    prisma: PrismaClient;
-};
-
-const prisma = globalForPrisma.prisma || new PrismaClient({
-    datasourceUrl: process.env.DATABASE_URL,
-});
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-
-export default prisma;
+// Bindings belong to the request. Never cache clients across requests.
+export function getPrisma() {
+  return new PrismaClient({ adapter: new PrismaD1(getRuntimeEnv().DB) });
+}
