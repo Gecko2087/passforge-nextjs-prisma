@@ -2,6 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "passforge-demo",
   "main": ".open-next/worker.js",
+  // next-themes serializes a function for the browser without Wrangler's helpers.
+  "keep_names": false,
   "compatibility_date": "2026-10-29",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
